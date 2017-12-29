@@ -1,0 +1,24 @@
+{
+  "name": "react-construct",
+  "version": "0.3.0",
+  "description": "Construct: React library",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PavelDymkov/react-construct.git"
+  },
+  "keywords": [
+    "react",
+    "library",
+    "conponents"
+  ],
+  "author": "Pavel Dymkov <dymkov86@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PavelDymkov/react-construct/issues"
+  },
+  "homepage": "https://github.com/PavelDymkov/react-construct#readme"
+}
