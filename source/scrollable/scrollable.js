@@ -43,9 +43,27 @@ export default class Scrollable extends React.Component {
                 box: null,
                 content: null,
                 value: null,
-                isOverflow: false
+                isOverflow: false,
+                scrollbar: {
+                    props: {
+                        value: null,
+                        size: null,
+                        offset: null,
+                        provideScrollbarThumb: element => this.scrollbarThumb.element = element
+                    },
+                    isVisib: false,
+                    isHidden: false,
+                    thumb: {}
+                }
             }
-        }
+        };
+
+        this.scrollbarProps = {
+            value: null,
+            size: null,
+            offset: null,
+            provideScrollbarThumb: element => this.scrollbarThumb.element = element
+        };
 
         this.scrollbarThumb = {
             element: null,
@@ -53,13 +71,6 @@ export default class Scrollable extends React.Component {
             initialized: false,
             startScrollValue: null,
             startPosition: null
-        };
-
-        this.scrollbarProps = {
-            value: null,
-            size: null,
-            offset: null,
-            provideScrollbarThumb: element =>  this.scrollbarThumb.element = element
         };
 
         this.onScroll = this.onScroll.bind(this);
@@ -103,6 +114,14 @@ export default class Scrollable extends React.Component {
             // let rate = boxHeight / contentHeight;
             let isOverflow = contentHeight > boxHeight;
 
+            if (isOverflow) {
+                let scrollbarWidth = this.dom.scrollbar.getBoundingClientRect().width;
+
+                this.dom.content.style.marginRight = `${scrollbarWidth}px`;
+            } else {
+                this.dom.content.style.marginRight = `0px`;
+            }
+
             let maxValue = contentHeight - boxHeight;
             let value = this.dom.content.scrollTop / maxValue;
 
@@ -117,24 +136,24 @@ export default class Scrollable extends React.Component {
     }
 
     initializeScrollbarThumb() {
-        if (this.scrollbarItem.element) {
-            this.scrollbarItem.element.addEventListener("mousedown", this.onScrollbarThumbInteractStart, false);
+        if (this.scrollbarThumb.element) {
+            this.scrollbarThumb.element.addEventListener("mousedown", this.onScrollbarThumbInteractStart, false);
 
             document.addEventListener("mousemove", this.onScrollbarThumbMove, false);
             document.addEventListener("mouseup", this.onScrollbarThumbInteractStop, false);
 
-            this.scrollbarItem.initialized = true;
+            this.scrollbarThumb.initialized = true;
         }
     }
 
     uninitializeScrollbarThumb() {
-        if (this.scrollbarItem.element) {
-            this.scrollbarItem.element.removeEventListener("mousedown", this.onScrollbarThumbInteractStart);
+        if (this.scrollbarThumb.element) {
+            this.scrollbarThumb.element.removeEventListener("mousedown", this.onScrollbarThumbInteractStart);
 
             document.removeEventListener("mousemove", this.onScrollbarThumbMove);
             document.removeEventListener("mouseup", this.onScrollbarThumbInteractStop);
 
-            this.scrollbarItem.initialized = false;
+            this.scrollbarThumb.initialized = false;
         }
     }
 
@@ -142,36 +161,36 @@ export default class Scrollable extends React.Component {
         event.preventDefault();
         event.stopPropagation();
 
-        this.scrollbarItem.isInteract = true;
-        this.scrollbarItem.startPosition = event.pageY;
-        this.scrollbarItem.startScrollValue = this.state.scrollValue;
+        this.scrollbarThumb.isInteract = true;
+        this.scrollbarThumb.startPosition = event.pageY;
+        this.scrollbarThumb.startScrollValue = this.state.scrollValue;
 
         document.addEventListener("click", preventClick, true);
     }
 
     onScrollbarThumbMove(event) {
-        if (!this.scrollbarItem.isInteract) return;
+        if (!this.scrollbarThumb.isInteract) return;
 
         event.preventDefault();
         event.stopPropagation();
 
-        let delta = event.pageY - this.scrollbarItem.startPosition;
+        let delta = event.pageY - this.scrollbarThumb.startPosition;
 
         let { boxHeight } = this.data;
         let realHeight = boxHeight - (boxHeight * this.rate);
 
-        let scrollValue = this.scrollbarItem.startScrollValue + (delta / realHeight);
+        let scrollValue = this.scrollbarThumb.startScrollValue + (delta / realHeight);
 
         this.setScrollValue(scrollValue);
     }
 
     onScrollbarThumbInteractStop(event) {
-        if (!this.scrollbarItem.isInteract) return;
+        if (!this.scrollbarThumb.isInteract) return;
 
         event.preventDefault();
         event.stopPropagation();
 
-        this.scrollbarItem.isInteract = false;
+        this.scrollbarThumb.isInteract = false;
     }
 
     render() {

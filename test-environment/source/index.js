@@ -18,3 +18,15 @@ switch (location.hash) {
         ReactDOM.render(<Scrollable />, application);
         break;
 }
+
+/*
+ TODO:
+ Draggable/Droppable
+ Overlay (Modal)
+ Rotator
+ Tabs
+ Carousel
+ Paginator
+ Slider (ползунок) |___^__|
+ Infinite Scroll
+*/

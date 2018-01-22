@@ -26,7 +26,7 @@
     "url": "https://github.com/PavelDymkov/react-construct/issues"
   },
   "homepage": "https://github.com/PavelDymkov/react-construct#readme",
-  "dependencies": {
+  "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
@@ -45,7 +45,8 @@
     "glob": "^7.1.2",
     "jest": "^22.0.4",
     "prop-types": "^15.6.0",
-    "puppeteer": "^0.13.0",
+    "puppeteer": "^1.0.0",
+    "puppeteer-io": "^1.0.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "style-loader": "^0.19.1",
