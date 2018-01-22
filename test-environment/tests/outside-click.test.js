@@ -1,16 +1,15 @@
 const puppeteer = require("puppeteer");
+const io = require("puppeteer-io");
 
 
 let browser;
 let page;
-let triggered;
 
 beforeAll(async () => {
     browser = await puppeteer.launch();
 });
 
 beforeEach(async () => {
-    triggered = false;
     page = await browser.newPage();
 
     await page.goto("http://localhost:56789/#outside-click");
@@ -25,43 +24,37 @@ afterAll(async () => {
 });
 
 
-describe(`dropdown`, () => {
-    test(`do not call callback if click inside`, async () => {
-        page.on("console", expectMessage("click-inside"));
+test(`do not call callback if click inside`, async () => {
+    await page.click("#click-inside-test .element");
 
-        let element = await page.$("#click-inside-test .element");
+    let messageContainer = await page.$("#output-message");
+    let message = await page.evaluate(element => element.textContent, messageContainer);
 
-        await element.click();
+    await messageContainer.dispose();
 
-        expect(triggered).toBeFalsy();
-    });
+    expect(message).not.toBe("ERROR");
+});
 
-    test(`call callback if click outside`, async () => {
-        page.on("console", expectMessage("click-outside"));
-
-        let outsideElement = await page.$("#click-outside-test .outside-element");
-
-        await outsideElement.click();
-
-        expect(triggered).toBeTruthy();
-    });
-
-    test(`call callback if click to another outside-click component`, async () => {
-        page.on("console", expectMessage("click-outside"));
-
-        let anotherComponentElement = await page.$("#click-inside-test .element");
-
-        await anotherComponentElement.click();
-
-        expect(triggered).toBeTruthy();
+test(`call callback if click outside`, done => {
+    io({
+        page, done,
+        async input() {
+            await page.click("#click-outside-test .outside-element");
+        },
+        async output({ message }) {
+            await message("click-outside");
+        }
     });
 });
 
-
-function expectMessage(message) {
-    return ({ type, text }) => {
-        if (type != "log") return;
-
-        if (text == message) triggered = true;
-    };
-}
+test(`call callback if click to another outside-click component`, done => {
+    io({
+        page, done,
+        async input() {
+            await page.click("#click-inside-test .element");
+        },
+        async output({ message }) {
+            await message("click-outside");
+        }
+    });
+});

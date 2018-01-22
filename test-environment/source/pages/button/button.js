@@ -4,6 +4,7 @@ import Button from "ReactConstruct/button";
 export default function () {
     return <div>
         <div id="release-test">
+            <input className="input" />
             <Button onRelease={console.log.bind(console, "button-release")}>
                 <div className="element">button</div>
             </Button>

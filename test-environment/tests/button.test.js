@@ -1,18 +1,12 @@
 const puppeteer = require("puppeteer");
-const looper = require("./looper.js");
+const io = require("puppeteer-io");
 
 
 let browser;
 let page;
 
 beforeAll(async () => {
-    browser = await puppeteer.launch({
-/*
-        headless: false,
-        devtools: true,
-        slowMo: 500
-*/
-    });
+    browser = await puppeteer.launch();
 });
 
 beforeEach(async () => {
@@ -32,92 +26,72 @@ afterAll(async () => {
 
 describe(`button onRelease`, () => {
     test(`onRelease callback by click`, done => {
-        looper({
-            page, done, 
-            async messageLoop({ receivedMessage }) {
-                await receivedMessage("button-release");
+        io({
+            page, done,
+            async input() {
+                await page.click("#release-test .element");
             },
-            async browserLoop() {
-                let element = await page.$("#release-test .element");
-
-                await element.click();
+            async output({ message }) {
+                await message("button-release");
             }
         });
     });
 
     test(`onRelease callback by enter key pressed`, done => {
-        looper({
-            page, done, 
-            async messageLoop({ receivedMessage }) {
-                await receivedMessage("button-release");
+        io({
+            page, done,
+            async input() {
+                await page.focus("#release-test .input");
+                await page.keyboard.press("Tab");
+                await page.keyboard.press("Enter");
             },
-            async browserLoop() {
-                let element = await page.$("#release-test .rc-button__helper");
-
-                await element.focus();
-                await element.press("Enter");
+            async output({ message }) {
+                await message("button-release");
             }
         });
     });
 });
-/*
+
 describe(`button handle focus-events`, () => {
     test(`focusIn callback`, done => {
-        looper({
+        io({
             page, done,
-            async messageLoop({ receivedMessage }) {
-                await receivedMessage("button-focus-in");
-            },
-            async browserLoop() {
+            async input() {
                 await page.focus("#focus-in-out-test .element");
+            },
+            async output({ message }) {
+                await message("button-focus-in");
             }
         });
     });
 
     test(`focusOut callback`, done => {
-        looper({
+        io({
             page, done,
-            async messageLoop({ receivedMessage }) {
-                await receivedMessage("button-focus-out");
-            },
-            async browserLoop() {
+            async input() {
                 await page.focus("#focus-in-out-test .element");
 
                 let outerInput = await page.$("#focus-in-out-test .input");
 
                 await outerInput.focus();
+            },
+            async output({ message }) {
+                await message("button-focus-out");
             }
         });
     });
 
     test(`onFocusChange callback`, done => {
-        looper({
+        io({
             page, done,
-            async messageLoop({ dataFromMessage }) {
-                let focusStateValue;
-
-                focusStateValue = await dataFromMessage("button-focus-change");
-
-                expect(focusStateValue).toBe(true);
-
-                focusStateValue = await dataFromMessage("button-focus-change");
-
-                expect(focusStateValue).toBe(false);
-            },
-            async browserLoop() {
+            async input() {
                 await page.focus("#focus-in-out-test .element");
 
                 let outerInput = await page.$("#focus-in-out-test .input");
 
                 await outerInput.focus();
-            }
-        });
-    });
-
-    test(`correct handle by keyboard`, done => {
-        looper({
-            page, done,
-            async messageLoop({ dataFromMessage }) {
+            },
+            async output({ dataFromMessage }) {
                 let focusStateValue;
 
                 focusStateValue = await dataFromMessage("button-focus-change");
@@ -127,38 +101,48 @@ describe(`button handle focus-events`, () => {
                 focusStateValue = await dataFromMessage("button-focus-change");
 
                 expect(focusStateValue).toBe(false);
+            }
+        });
+    });
+
+    test(`correct handle by keyboard`, done => {
+        io({
+            page, done,
+            async input() {
+                await page.focus("#focus-test .input-1");
+                await page.keyboard.press("Tab");
+                await page.keyboard.press("Tab");
             },
-            async browserLoop() {
-                let input1 = await page.$("#focus-test .input-1");
+            async output({ dataFromMessage }) {
+                let focusStateValue;
 
-                await input1.focus();
-                await input1.press("Tab");
+                focusStateValue = await dataFromMessage("button-focus-change");
 
-                let componentInput = await page.$("#focus-test .rc-button__helper");
+                expect(focusStateValue).toBe(true);
 
-                await componentInput.press("Tab");
+                focusStateValue = await dataFromMessage("button-focus-change");
+
+                expect(focusStateValue).toBe(false);
             }
         });
     });
 });
-*/
-/*
+
 describe(`button handle keyboard-events`, () => {
     test(`button handle "enter" key`, done => {
-        looper({
-            page, done, 
-            async messageLoop({ dataFromMessage }) {
-                let data = await dataFromMessage("button-key");
-
-                expect(data.key).toBe(13);
-            },
-            async browserLoop() {
+        io({
+            page, done,
+            async input() {
                 let element = await page.$("#key-test .element");
 
                 await element.click();
                 await element.press("Enter");
+            },
+            async output({ dataFromMessage }) {
+                let data = await dataFromMessage("button-key");
+
+                expect(data.key).toBe(13);
             }
         });
     });
 });
-*/
