@@ -2,6 +2,7 @@ import Dropdown from "./pages/dropdown/dropdown.js";
 import OutsideClick from "./pages/outside-click/outside-click.js";
 import Button from "./pages/button/button.js";
 import Scrollable from "./pages/scrollable/scrollable.js";
+import Slider from "./pages/slider/slider.js";
 
 
 switch (location.hash) {
@@ -16,6 +17,9 @@ switch (location.hash) {
         break;
     case "#scrollable":
         ReactDOM.render(<Scrollable />, application);
+        break;
+    case "#slider":
+        ReactDOM.render(<Slider />, application);
         break;
 }
 
