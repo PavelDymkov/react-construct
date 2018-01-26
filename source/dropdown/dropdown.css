@@ -1,9 +1,5 @@
-.rc-dropdown__container {
+.rc-dropdown__box {
     position: relative;
-    display: inline-block;
-}
-
-.rc-dropdown__element {
     display: inline-block;
 }
 

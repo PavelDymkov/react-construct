@@ -1,51 +1,58 @@
 import Dropdown from "ReactConstruct/dropdown";
 
 
+function getBox(direction) {
+    return <div className={styles.box}>
+        box {direction}
+    </div>
+}
+
+function getContent(isBig) {
+    let style = styles.content;
+
+    if (isBig) {
+        style += " " + styles["big-content"];
+    }
+
+    return <div className={style}>
+        content
+    </div>
+}
+
 export default function () {
-    return <div>
-        <div id="for-default-test">
-            <Dropdown>
-                <Dropdown.Element>
-                    <div className="element">
-                        element
-                    </div>
-                </Dropdown.Element>
-                <Dropdown.Content>
-                    <div className="content">
-                        content
-                    </div>
-                </Dropdown.Content>
-            </Dropdown>
+    return <div className={styles.page}>
+        <div>
+            <div className={styles.cell}>
+                <Dropdown show box={getBox("↓")} content={getContent()} />
+            </div>
+            <div className={styles.cell}>
+                <Dropdown show box={getBox("↓")} content={getContent()} invert />
+            </div>
+            <div className={styles.cell}>
+                <Dropdown show box={getBox("↑")} content={getContent()} invert fitOnScreen={false} />
+            </div>
         </div>
-
-        <div id="for-show-test">
-            <Dropdown show={true}>
-                <Dropdown.Element>
-                    <div className="element">
-                        element
-                    </div>
-                </Dropdown.Element>
-                <Dropdown.Content>
-                    <div className="content">
-                        content
-                    </div>
-                </Dropdown.Content>
-            </Dropdown>
+        <div className={styles["middle-line"]}>
+            <div className={styles.cell}>&nbsp;</div>
+            <div className={styles.cell}>&nbsp;</div>
+            <div className={styles.cell}>&nbsp;</div>
+            <div className={styles.cell}>
+                <Dropdown show box={getBox("↓")} content={getContent("BIG")} />
+            </div>
+            <div className={styles.cell}>
+                <Dropdown show box={getBox("↑")} content={getContent("BIG")} invert />
+            </div>
         </div>
-
-        <div id="for-hide-test">
-            <Dropdown show={false}>
-                <Dropdown.Element>
-                    <div className="element">
-                        element
-                    </div>
-                </Dropdown.Element>
-                <Dropdown.Content>
-                    <div className="content">
-                        content
-                    </div>
-                </Dropdown.Content>
-            </Dropdown>
+        <div className={styles["bottom-line"]}>
+            <div className={styles.cell}>
+                <Dropdown show box={getBox("↑")} content={getContent()} />
+            </div>
+            <div className={styles.cell}>
+                <Dropdown show box={getBox("↓")} content={getContent()} fitOnScreen={false} />
+            </div>
+            <div className={styles.cell}>
+                <Dropdown show box={getBox("↑")} content={getContent()} invert />
+            </div>
         </div>
     </div>
 }

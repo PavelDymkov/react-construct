@@ -3,6 +3,7 @@ import OutsideClick from "./pages/outside-click/outside-click.js";
 import Button from "./pages/button/button.js";
 import Scrollable from "./pages/scrollable/scrollable.js";
 import Slider from "./pages/slider/slider.js";
+import Modal from "./pages/modal/modal.js";
 
 
 switch (location.hash) {
@@ -20,6 +21,9 @@ switch (location.hash) {
         break;
     case "#slider":
         ReactDOM.render(<Slider />, application);
+        break;
+    case "#modal":
+        ReactDOM.render(<Modal />, application);
         break;
 }
 
