@@ -1,10 +1,11 @@
 {
-  "name": "react-construct",
+  "name": "react-construct-source",
   "version": "0.3.0",
-  "description": "Construct: React library",
+  "description": "React-Construct sources",
   "main": "index.js",
   "scripts": {
     "build": "node build.js",
+    "deploy": "gulp",
     "start": "exit 0",
     "test": "npm run build && node test-environment/run-tests.js",
     "test-server": "cd test-environment && webpack-dev-server",
@@ -15,11 +16,6 @@
     "type": "git",
     "url": "git+https://github.com/PavelDymkov/react-construct.git"
   },
-  "keywords": [
-    "react",
-    "library",
-    "components"
-  ],
   "author": "Pavel Dymkov <dymkov86@gmail.com>",
   "license": "ISC",
   "bugs": {
@@ -33,16 +29,17 @@
     "babel-plugin-auto-import": "^0.7.1",
     "babel-plugin-syntax-jsx": "^6.18.0",
     "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-plugin-transform-dot-notation-to-props": "^0.7.0",
     "babel-plugin-transform-react-display-name": "^6.25.0",
     "babel-plugin-transform-react-jsx": "^6.24.1",
     "babel-plugin-transform-react-statements": "^0.7.3",
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "css-loader": "^0.28.7",
+    "del": "^3.0.0",
     "extract-text-webpack-plugin": "^3.0.2",
     "fs-extra": "^5.0.0",
     "glob": "^7.1.2",
+    "gulp": "^3.9.1",
     "jest": "^22.0.4",
     "prop-types": "^15.6.0",
     "puppeteer": "^1.0.0",
