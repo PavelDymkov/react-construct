@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node build.js",
     "deploy": "gulp",
+    "dev": "gulp dev",
     "start": "exit 0",
     "test": "npm run build && node test-environment/run-tests.js",
     "test-server": "cd test-environment && webpack-dev-server",
@@ -39,7 +40,7 @@
     "extract-text-webpack-plugin": "^3.0.2",
     "fs-extra": "^5.0.0",
     "glob": "^7.1.2",
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.0",
     "jest": "^22.0.4",
     "prop-types": "^15.6.0",
     "puppeteer": "^1.0.0",
