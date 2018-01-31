@@ -5,7 +5,7 @@ const { copy } = require("fs-extra");
 const webpack = require("webpack");
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const http = require("http");
-const static = require("node-static");
+const Static = require("node-static");
 
 
 gulp.task("dev:lib-watching", () => {
@@ -92,8 +92,6 @@ gulp.task("dev:webpack", done => {
         ]
     });
 
-    let compileCounter = 0;
-
     compiler.watch(null, (error, stats) => {
         if (error) throw error;
 
@@ -111,7 +109,7 @@ gulp.task("dev:webpack", done => {
 });
 
 gulp.task("dev:server", done => {
-    const file = new static.Server("./development/");
+    const file = new Static.Server("./development/");
 
     http.createServer((request, response) => {
         request.addListener("end", () => {
