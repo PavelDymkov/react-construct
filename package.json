@@ -8,10 +8,7 @@
     "deploy": "gulp",
     "dev": "gulp dev",
     "start": "exit 0",
-    "test": "npm run build && node test-environment/run-tests.js",
-    "test-server": "cd test-environment && webpack-dev-server",
-    "test-jest": "node node_modules/.bin/jest test-environment/tests/button.test.js",
-    "test-jest-debug": "node --inspect --inspect-brk node_modules/.bin/jest test-environment/tests/button.test.js"
+    "test": "gulp test"
   },
   "repository": {
     "type": "git",
@@ -42,6 +39,7 @@
     "glob": "^7.1.2",
     "gulp": "^4.0.0",
     "jest": "^22.0.4",
+    "memory-fs": "^0.4.1",
     "node-static": "^0.7.10",
     "prop-types": "^15.6.0",
     "puppeteer": "^1.0.0",

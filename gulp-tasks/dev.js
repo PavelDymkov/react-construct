@@ -4,7 +4,7 @@ const { getLibFilePaths, buildJs } = require("./deploy.js");
 const { copy } = require("fs-extra");
 const webpack = require("webpack");
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
-const http = require("http");
+const { createServer } = require("http");
 const Static = require("node-static");
 
 
@@ -111,7 +111,7 @@ gulp.task("dev:webpack", done => {
 gulp.task("dev:server", done => {
     const file = new Static.Server("./development/");
 
-    http.createServer((request, response) => {
+    createServer((request, response) => {
         request.addListener("end", () => {
             file.serve(request, response);
         }).resume();
