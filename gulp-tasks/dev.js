@@ -21,8 +21,8 @@ gulp.task("dev:lib-watching", () => {
 
     let cssFilesWatcher = gulp.watch("./source/*/*.css");
 
-    rootFilesWatcher.on("add", copyCssFile);
-    rootFilesWatcher.on("change", copyCssFile);
+    cssFilesWatcher.on("add", copyCssFile);
+    cssFilesWatcher.on("change", copyCssFile);
 
     return Promise.resolve();
 });
