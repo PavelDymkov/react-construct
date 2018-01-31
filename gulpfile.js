@@ -6,28 +6,16 @@ const del = require("del");
 const { transform } = require("babel-core");
 
 
+process.chdir(__dirname);
+
 
 gulp.task("deploy:clean-before", () => {
-    return del(["lib/!*", "!lib/!*.json"]);
+    return del(["lib/*", "!lib/*.json"]);
 });
 
-gulp.task("deploy", gulp.parallel("deploy:clean-before"));
-
-
-gulp.task("default", gulp.series("deploy"));
-
-/*
-gulp.task("deploy", ["deploy:clean-before", "deploy:js", "deploy:copy"]);
-
-gulp.task("deploy:clean-before", done => {
-    del(["lib/!*", "!lib/!*.json"], done);
-});
-
-gulp.task("deploy:js", ["deploy:build-js", "deploy:build-root-js"]);
-
-gulp.task("deploy:build-js", () => {
+gulp.task("deploy:build-lib-js", () => {
     return new Promise((resolve, reject) => {
-        glob("./source/!*!/!*.js", (error, jsFiles) => {
+        glob("./source/*/*.js", (error, jsFiles) => {
             if (error) reject(error);
 
             jsFiles.forEach(async filePath => {
@@ -43,7 +31,7 @@ gulp.task("deploy:build-js", () => {
 
 gulp.task("deploy:build-root-js", () => {
     return new Promise((resolve, reject) => {
-        glob("./source/!*.js", (error, jsFiles) => {
+        glob("./source/*.js", (error, jsFiles) => {
             if (error) reject(error);
 
             jsFiles.forEach(async filePath => {
@@ -57,11 +45,9 @@ gulp.task("deploy:build-root-js", () => {
     });
 });
 
-gulp.task("deploy:copy", ["deploy:copy-css", "deploy:copy-md"]);
-
 gulp.task("deploy:copy-css", () => {
     return new Promise((resolve, reject) => {
-        glob("./source/!**!/!*.css", (error, cssFiles) => {
+        glob("./source/*/*.css", (error, cssFiles) => {
             if (error) reject(error);
 
             cssFiles.forEach(async filePath => {
@@ -79,35 +65,41 @@ gulp.task("deploy:copy-md", () => {
     return gulp.src("README.md").pipe(gulp.dest("lib/"));
 });
 
+gulp.task("deploy:js", gulp.parallel("deploy:build-lib-js", "deploy:build-root-js"));
+gulp.task("deploy:copy", gulp.parallel("deploy:copy-css", "deploy:copy-md"));
 
-// gulp.task("publish");
+gulp.task("deploy", gulp.series("deploy:clean-before", gulp.parallel("deploy:js", "deploy:copy")));
 
 
-gulp.task("dev", ["dev:lib"]);
+gulp.task("dev:lib", gulp.series("deploy", () => {
+    let libFilesWatcher = gulp.watch("./source/*/*.js");
 
-gulp.task("dev:lib", ["deploy"], () => {
-    console.log("INVOKE!!!");
+    libFilesWatcher.on("add", libFileRebuild);
+    libFilesWatcher.on("change", libFileRebuild);
 
-    gulp.watch("./source/!*!/!*.js", event => {
-        if (event.type == "deleted") return;
+    let rootFilesWatcher = gulp.watch("./source/*.js");
 
-        let [sourceFilePath, destinationFilePath] = getShiftedPath(event.path);
+    rootFilesWatcher.on("add", rootFileRebuild);
+    rootFilesWatcher.on("change", rootFileRebuild);
+
+
+    function libFileRebuild(filePath) {
+        let [sourceFilePath, destinationFilePath] = getShiftedPath(filePath);
 
         buildJs(sourceFilePath, destinationFilePath);
-    });
+    }
 
-    gulp.watch("./source/!*.js", event => {
-        if (event.type == "deleted") return;
-
-        let fileName = basename(event.path);
+    function rootFileRebuild(filePath) {
+        let fileName = basename(filePath);
 
         buildJs(filePath, `./lib/${fileName}`);
-    });
-});
+    }
+}));
 
-gulp.task("default", ["deploy"]);
+gulp.task("dev", gulp.series("dev:lib"));
 
-*/
+
+gulp.task("default", gulp.series("deploy"));
 
 
 function getShiftedPath(path) {
