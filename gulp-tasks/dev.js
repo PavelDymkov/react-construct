@@ -1,7 +1,11 @@
 const gulp = require("gulp");
-const { basename } = require("path");
+const { join, basename } = require("path");
 const { getLibFilePaths, buildJs } = require("./deploy.js");
 const { copy } = require("fs-extra");
+const webpack = require("webpack");
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const http = require("http");
+const static = require("node-static");
 
 
 gulp.task("dev:lib-watching", () => {
@@ -23,11 +27,102 @@ gulp.task("dev:lib-watching", () => {
     return Promise.resolve();
 });
 
-gulp.task("dev:run-dev-server", () => {
-    console.log("dev:run-dev-server")
+gulp.task("dev:webpack", done => {
+    const compiler = webpack({
+        entry: "./development/index.js",
+        output: {
+            path: join(process.cwd(), "development/assets/"),
+            filename: "bundle.js"
+        },
+        module: {
+            rules: [
+                {
+                    test: /\.js$/,
+                    use: {
+                        loader: "babel-loader",
+                        options: {
+                            presets: ["babel-preset-env"],
+                            plugins: [
+                                [
+                                    "auto-import",
+                                    {
+                                        "declarations": [
+                                            { "default": "React", "path": "react" },
+                                            { "default": "ReactDOM", "path": "react-dom" },
+                                            { "default": "PropTypes", "path": "prop-types" },
+                                            { "default": "styles", "path": "./styles.css" }
+                                        ]
+                                    }
+                                ],
+                                "transform-class-properties",
+                                "syntax-jsx",
+                                "transform-react-statements",
+                                "transform-react-jsx",
+                                "transform-react-display-name"
+                            ]
+                        }
+                    }
+                },
+                {
+                    test: /.css$/,
+                    exclude: [join(process.cwd(), "lib/")],
+                    use: ExtractTextPlugin.extract({
+                        fallback: "style-loader",
+                        use: "css-loader?modules&importLoaders=1&localIdentName=[local]___[hash:base64:8]"
+                    })
+                },
+                {
+                    test: /.css$/,
+                    include: [join(process.cwd(), "lib")],
+                    use: ExtractTextPlugin.extract({
+                        fallback: "style-loader",
+                        use: "css-loader"
+                    })
+                }
+            ]
+        },
+        resolve: {
+            alias: {
+                rc: join(process.cwd(), "lib")
+            }
+        },
+        plugins: [
+            new webpack.SourceMapDevToolPlugin({}),
+            new ExtractTextPlugin("bundle.css")
+        ]
+    });
+
+    let compileCounter = 0;
+
+    compiler.watch(null, (error, stats) => {
+        if (error) throw error;
+
+        if (stats.hasErrors()) {
+            console.log(stats.toString());
+        } else {
+            const FgGreen = "\x1b[32m";
+            const Reset = "\x1b[0m";
+
+            console.log(FgGreen, `development compiled: ${new Date}`, Reset);
+        }
+    });
+
+    done();
 });
 
-gulp.task("dev", gulp.series("deploy", "dev:lib-watching", "dev:run-dev-server"));
+gulp.task("dev:server", done => {
+    const file = new static.Server("./development/");
+
+    http.createServer((request, response) => {
+        request.addListener("end", () => {
+            file.serve(request, response);
+        }).resume();
+    }).listen(56789);
+
+    done();
+});
+
+gulp.task("dev", gulp.series("deploy", "dev:lib-watching", gulp.parallel("dev:webpack", "dev:server")));
 
 
 function libFileRebuild(filePath) {
