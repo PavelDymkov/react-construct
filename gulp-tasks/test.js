@@ -1,6 +1,6 @@
 const gulp = require("gulp");
 const { createServer } = require("http");
-const { join, dirname, isAbsolute } = require("path");
+const { join, dirname } = require("path");
 const webpack = require("webpack");
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const MemoryFileSystem = require("memory-fs");
@@ -11,33 +11,32 @@ const ReactDOMServer = require("react-dom/server");
 const vm = require("vm");
 
 
+const bundleNames = { js: "bundle.js", css: "bundle.css" };
 const webpackConfig = {
     entry: null,
     output: {
         path: "/",
-        filename: "bundle.js"
+        filename: bundleNames.js
     },
     module: {
         rules: [
             {
                 test: /\.js$/,
+                exclude: /node_modules/,
                 use: {
                     loader: "babel-loader",
                     options: {
                         presets: ["babel-preset-env"],
                         plugins: [
-                            /*[
+                            [
                                 "auto-import",
                                 {
                                     "declarations": [
                                         { "default": "React", "path": "react" },
-                                        { "default": "ReactDOM", "path": "react-dom" },
-                                        { "default": "PropTypes", "path": "prop-types" },
-                                        { "default": "styles", "path": "./styles.css" }
+                                        { "default": "ReactDOM", "path": "react-dom" }
                                     ]
                                 }
-                            ],*/
-                            "transform-class-properties",
+                            ],
                             "syntax-jsx",
                             "transform-react-statements",
                             "transform-react-jsx",
@@ -60,78 +59,63 @@ const webpackConfig = {
             rc: join(process.cwd(), "lib/")
         }
     },
-    plugins: [
-        // new webpack.SourceMapDevToolPlugin({}),
-        new ExtractTextPlugin("bundle.css")
-    ]
+    plugins: [ new ExtractTextPlugin(bundleNames.css) ]
 };
 
 let shotDownServer = null;
 
 gulp.task("test:client-side-render", done => {
-    createServer((request, response) => {
-        request.addListener("end", () => {
-            // request, response;
-            // debugger
-            let entry = "./test/modal/modal.js";
-            let compiler = webpack({ entry, ...webpackConfig});
-
-            compiler.outputFileSystem = new MemoryFileSystem;
-
-            compiler.run((err, stats) => {
-                let js = memoryFS.readFileSync("/bundle.js");
-                let css = "";
-
-                try {
-                    css = memoryFS.readFileSync("/bundle.css");
-                } catch (error) { }
-
-                response.writeHead(200, {'Content-Type': 'text/html'});
-                response.write(`
-                    <meta charset="utf-8">
-                    <style>${css}</style>
-                    <div id="application"></div>
-                    <script>${js}</script>
-                `);
-                response.end();
-            });
-        }).resume();
-    }).listen(56789);
-
-    done();
-});
-
-gulp.task("test:server-side-render", done => {
-    let Page = getPage("./test/modal/modal.js");
-    let html = ReactDOMServer.renderToString(React.createElement(Page, null));
-
-    runServer("./test/modal/modal.js", ({ js, css }) => `
+    runServer(({ js, css }) => `
         <meta charset="utf-8">
         <style>${css}</style>
-        <div id="application">${html}</div>
-        <script> window.isServerSideRendered = true; </script>
+        <div id="application"></div>
         <script>${js}</script>
     `);
 
     done();
 });
 
+gulp.task("test:server-side-render", done => {
+    runServer(({ js, css }, filePath) => {
+        let Page = getPage(filePath);
+        let html = ReactDOMServer.renderToString(React.createElement(Page, null));
+
+        return `
+            <meta charset="utf-8">
+            <style>${css}</style>
+            <div id="application">${html}</div>
+            <script> window.isServerSideRendered = true; </script>
+            <script>${js}</script>
+        `
+    });
+
+    done();
+});
+
 gulp.task("test:run", done => {
     spawn("node", ["node_modules/.bin/jest", "test/"])
-        .on("close", code => {
-            console.log(`child process exited with code ${code}`);
-        });
+        .on("close", shotDownServer);
 });
 
 gulp.task("test", gulp.series("test:server-side-render"));
+/*gulp.task("test", gulp.series(
+    gulp.series("test:client-side-render", "test:run"),
+    gulp.series("test:server-side-render", "test:run")
+));*/
 
 
-function runServer(entry, getLayout) {
-    createServer((request, response) => {
+function runServer(getLayout) {
+    let server = createServer((request, response) => {
         request.addListener("end", () => {
-            // request, response;
-            // debugger
-            let compiler = webpack({ entry, ...webpackConfig});
+            if (request.url == "/favicon.ico") {
+                response.writeHead(404);
+                response.end();
+
+                return;
+            }
+
+            let entry = getEntryPoint(request.url);
+            let compiler = webpack({ ...webpackConfig, entry });
 
             let memoryFS = new MemoryFileSystem;
 
@@ -146,11 +130,17 @@ function runServer(entry, getLayout) {
                 } catch (error) { }
 
                 response.writeHead(200, {'Content-Type': 'text/html'});
-                response.write(getLayout({ js, css }));
+                response.write(getLayout({ js, css }, entry));
                 response.end();
             });
         }).resume();
-    }).listen(56789);
+    });
+
+    server.listen(56789);
+
+    shotDownServer = () => {
+        server.close(() => {});
+    }
 }
 
 function getPage(path) {
@@ -158,7 +148,6 @@ function getPage(path) {
     let { code } = transformFile(pagePath, {
         presets: ["babel-preset-env"],
         plugins: [
-            "transform-class-properties",
             "syntax-jsx",
             "transform-react-statements",
             "transform-react-jsx",
@@ -211,4 +200,14 @@ function requireStub(path) {
     }
 
     return require(path);
+}
+
+function getEntryPoint(url) {
+    if (url.indexOf("/") > 0) {
+        return `./test${url}.js`;
+    }
+
+    let name = url.substring(1);
+
+    return `./test/${name}/${name}.js`;
 }

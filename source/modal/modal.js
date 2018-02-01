@@ -56,7 +56,7 @@ export default class Modal extends React.Component {
     }
 
     render() {
-        return <div>test</div>
+        if (typeof window == "undefined") return <div>test</div>
 
         let modal = <div ref={this.getElement("box")} className="rc-modal__box">
             <div className="rc-modal__content">
