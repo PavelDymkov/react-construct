@@ -56,6 +56,8 @@ export default class Modal extends React.Component {
     }
 
     render() {
+        return <div>test</div>
+
         let modal = <div ref={this.getElement("box")} className="rc-modal__box">
             <div className="rc-modal__content">
                 {this.props.children}
@@ -67,6 +69,8 @@ export default class Modal extends React.Component {
 }
 
 function getModalRootElement() {
+    if (typeof document == "undefined") return null;
+
     let modalRootElement = document.querySelector(`.${Modal.MODAL_ROOT_CLASS_NAME}`);
 
     if (!modalRootElement) {
