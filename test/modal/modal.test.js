@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer");
 // const io = require("puppeteer-io");
+const getUrl = require("../get-url.js");
 
 
 let browser;
@@ -12,7 +13,7 @@ beforeAll(async () => {
 beforeEach(async () => {
     page = await browser.newPage();
 
-    await page.goto("http://localhost:56789/");
+    await page.goto(getUrl("modal"));
 });
 
 afterEach(async () => {

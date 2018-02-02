@@ -9,14 +9,15 @@ const { transformFileSync: transformFile } = require("babel-core");
 const React = require("react");
 const ReactDOMServer = require("react-dom/server");
 const vm = require("vm");
+const { existsSync: fileExists } = require("fs");
 
 
-const bundleNames = { js: "bundle.js", css: "bundle.css" };
+const bundle = { js: "bundle.js", css: "bundle.css" };
 const webpackConfig = {
     entry: null,
     output: {
         path: "/",
-        filename: bundleNames.js
+        filename: bundle.js
     },
     module: {
         rules: [
@@ -59,7 +60,7 @@ const webpackConfig = {
             rc: join(process.cwd(), "lib/")
         }
     },
-    plugins: [ new ExtractTextPlugin(bundleNames.css) ]
+    plugins: [ new ExtractTextPlugin(bundle.css) ]
 };
 
 let shotDownServer = null;
@@ -92,29 +93,31 @@ gulp.task("test:server-side-render", done => {
     done();
 });
 
-gulp.task("test:run", done => {
-    spawn("node", ["node_modules/.bin/jest", "test/"])
-        .on("close", shotDownServer);
+gulp.task("test:run", () => {
+    return new Promise((resolve, reject) => {
+        spawn("node", ["node_modules/.bin/jest", "test/"])
+            .on("close", () => {
+                shotDownServer(resolve);
+            });
+    });
 });
 
-gulp.task("test", gulp.series("test:server-side-render"));
-/*gulp.task("test", gulp.series(
+/*gulp.task("test", gulp.series("test:client-side-render"));*/
+gulp.task("test", gulp.series(
     gulp.series("test:client-side-render", "test:run"),
     gulp.series("test:server-side-render", "test:run")
-));*/
+));
 
 
 function runServer(getLayout) {
     let server = createServer((request, response) => {
         request.addListener("end", () => {
-            if (request.url == "/favicon.ico") {
-                response.writeHead(404);
-                response.end();
-
-                return;
-            }
+            if (request.url == "/favicon.ico") return notFound(response);
 
             let entry = getEntryPoint(request.url);
+
+            if (!fileExists(entry)) return notFound(response);
+
             let compiler = webpack({ ...webpackConfig, entry });
 
             let memoryFS = new MemoryFileSystem;
@@ -138,9 +141,14 @@ function runServer(getLayout) {
 
     server.listen(56789);
 
-    shotDownServer = () => {
-        server.close(() => {});
-    }
+    shotDownServer = callback => {
+        server.close(callback);
+    };
+}
+
+function notFound(response) {
+    response.writeHead(404);
+    response.end();
 }
 
 function getPage(path) {
@@ -149,7 +157,6 @@ function getPage(path) {
         presets: ["babel-preset-env"],
         plugins: [
             "syntax-jsx",
-            "transform-react-statements",
             "transform-react-jsx",
             "transform-react-display-name"
         ]
@@ -169,20 +176,27 @@ function getPage(path) {
 
 function execute(path, requireStub) {
     let { code } = transformFile(path, {
-        presets: ["babel-preset-env"]
+        presets: ["babel-preset-env"],
+        plugins: [
+            "syntax-jsx",
+            "transform-react-jsx",
+            "transform-react-display-name"
+        ]
     });
 
-    let exports = {}
-    let context = { require: requireStub, module: { exports }, exports };
+    let exports = {};
+    let module = {  exports};
+    let context = { require: requireStub, module, exports };
 
     vm.createContext(context);
     vm.runInContext(code, context);
 
-    return exports;
+    return module.exports;
 }
 
 function requireStub(path) {
     if (path == "react") return React;
+
     if (/\.css$/.test(path)) return;
 
     if (/^rc\//.test(path)) {
