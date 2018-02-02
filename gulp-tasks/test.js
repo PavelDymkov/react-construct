@@ -1,6 +1,6 @@
 const gulp = require("gulp");
 const { createServer } = require("http");
-const { join, dirname } = require("path");
+const { join, sep: separator } = require("path");
 const webpack = require("webpack");
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const MemoryFileSystem = require("memory-fs");
@@ -57,7 +57,7 @@ const webpackConfig = {
     },
     resolve: {
         alias: {
-            rc: join(process.cwd(), "lib/")
+            rc: getAbsolutePath("lib/")
         }
     },
     plugins: [ new ExtractTextPlugin(bundle.css) ]
@@ -79,6 +79,9 @@ gulp.task("test:client-side-render", done => {
 gulp.task("test:server-side-render", done => {
     runServer(({ js, css }, filePath) => {
         let Page = getPage(filePath);
+
+        if (!Page) return `can't render Page: ${filePath}`;
+
         let html = ReactDOMServer.renderToString(React.createElement(Page, null));
 
         return `
@@ -102,7 +105,6 @@ gulp.task("test:run", () => {
     });
 });
 
-/*gulp.task("test", gulp.series("test:client-side-render"));*/
 gulp.task("test", gulp.series(
     gulp.series("test:client-side-render", "test:run"),
     gulp.series("test:server-side-render", "test:run")
@@ -142,7 +144,11 @@ function runServer(getLayout) {
     server.listen(56789);
 
     shotDownServer = callback => {
-        server.close(callback);
+        server.close(() => {
+            if (typeof callback == "function") callback();
+
+            shotDownServer = null;
+        });
     };
 }
 
@@ -151,69 +157,81 @@ function notFound(response) {
     response.end();
 }
 
-function getPage(path) {
-    let pagePath = join(process.cwd(), path);
-    let { code } = transformFile(pagePath, {
-        presets: ["babel-preset-env"],
-        plugins: [
-            "syntax-jsx",
-            "transform-react-jsx",
-            "transform-react-display-name"
-        ]
-    });
+function getAbsolutePath(...paths) {
+    return join(process.cwd(), ...paths);
+}
 
+function getPage(path) {
+    let pagePath = getAbsolutePath(path);
     let context = {
-        require: requireStub.bind({ dirname: dirname(pagePath) }),
         window: {}, application: null,
         React, ReactDOM: { hydrate: () => {}, render: () => {} }
     };
 
-    vm.createContext(context);
-    vm.runInContext(code, context);
-
-    return context.Page;
+    return execute(pagePath, context).Page;
 }
 
-function execute(path, requireStub) {
-    let { code } = transformFile(path, {
-        presets: ["babel-preset-env"],
-        plugins: [
-            "syntax-jsx",
-            "transform-react-jsx",
-            "transform-react-display-name"
-        ]
-    });
+function execute(path, context={}) {
+    let sourceCode = null;
+
+    try {
+        let { code } = transformFile(path, {
+            presets: ["babel-preset-env"],
+            plugins: [
+                "syntax-jsx",
+                "transform-react-jsx",
+                "transform-react-display-name"
+            ]
+        });
+
+        sourceCode = code;
+    } catch (error) {
+        console.log("\x1b[31m", `error while compiling: ${path}`, "\x1b[0m");
+        // console.log(error);
+    }
+
+    if (!sourceCode) return;
 
     let exports = {};
-    let module = {  exports};
-    let context = { require: requireStub, module, exports };
+    let module = { exports };
+    let executionContext = { require: getRequire(path), module, exports, ...context };
 
-    vm.createContext(context);
-    vm.runInContext(code, context);
+    vm.createContext(executionContext);
+
+    try {
+        vm.runInContext(sourceCode, executionContext);
+    } catch (error) {
+        console.log("\x1b[31m", `error while running: ${path}`, "\x1b[0m");
+        // console.log(error);
+    }
 
     return module.exports;
 }
 
-function requireStub(path) {
-    if (path == "react") return React;
+function getRequire(filePath) {
+    return function (path) {
+        if (path == "react") return React;
 
-    if (/\.css$/.test(path)) return;
+        if (/\.css$/.test(path)) return;
 
-    if (/^rc\//.test(path)) {
-        let [, modulePath] = path.match(/^rc\/(.+)/);
+        if (/^rc\//.test(path)) {
+            let [, modulePath] = path.match(/^rc\/(.+)/);
 
-        let absolutePath = join(process.cwd(), "lib/", /\.js$/.test(modulePath) ? modulePath : modulePath + ".js");
+            let absolutePath = getAbsolutePath("lib/", /\.js$/.test(modulePath) ? modulePath : modulePath + ".js");
 
-        return execute(absolutePath, requireStub.bind({ dirname: dirname(absolutePath) }));
-    }
+            return execute(absolutePath);
+        }
 
-    if (/^\./.test(path) && this.dirname) {
-        let absolutePath = join(this.dirname, path);
+        if (/^\./.test(path)) {
+            let basenamePosition = filePath.lastIndexOf(separator);
+            let dirName = filePath.substring(0, basenamePosition);
+            let absolutePath = join(dirName, path);
 
-        return execute(absolutePath, requireStub.bind({ dirname: dirname(absolutePath) }));
-    }
+            return execute(absolutePath);
+        }
 
-    return require(path);
+        return require(path);
+    };
 }
 
 function getEntryPoint(url) {

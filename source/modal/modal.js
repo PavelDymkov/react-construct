@@ -3,10 +3,14 @@ import "./modal.css";
 const ReactDOM = require("react-dom");
 
 
-export default class Modal extends React.Component {
+export default class Modal extends BaseComponent {
     static propTypes = {
         onClose: PropTypes.func,
         onScroll: PropTypes.func
+    };
+
+    static classNames = {
+        root: "rc-modal__root"
     };
 
     static closeReason = {
@@ -14,51 +18,50 @@ export default class Modal extends React.Component {
         BY_OUTSIDE_CLICK: 2
     };
 
-    static MODAL_ROOT_CLASS_NAME = "rc-modal__root";
-
-    constructor(props) {
-        super(props);
-
-        this.isReady = false;
-        this.dom = {
-            root: getModalRootElement()
-        };
-    }
-
-    componentDidMount() {
-        this.initialize();
-    }
-
-    getElement(name) {
-        return element => this.dom[name] = element;
-    }
-
-    initialize() {
-        if (this.isReady) return;
-
-        preventScrollByKeyboard.initialScroll = [scrollX, scrollY];
-
-        window.addEventListener("keyup", ({ keyCode }) => keyCode == 27 && this.closeBy(Modal.closeReason.BY_ESCAPE_BUTTON), false);
-        window.addEventListener("keydown", preventScrollByKeyboard, false);
-        window.addEventListener("scroll",preventPageScrollByScrollbar, false);
-        this.dom.box.addEventListener("mousewheel", preventDefault, false);
-        this.dom.box.addEventListener("click", this.closeBy.bind(this, Modal.closeReason.BY_OUTSIDE_CLICK), false);
-
-        this.isReady = true;
-    }
-
-    closeBy(reason) {
-        const { onClose } = this.props;
-
-        if (typeof onClose == "function") {
-            onClose(reason);
+    componentWillMount() {
+        if (this.isClient) {
+            this.dom.root = getModalRootElement();
         }
     }
 
-    render() {
-        if (typeof window == "undefined") return <div>test</div>
+    initialize() {
+        this.events = {
+            closeByEscape: this.closeByEscape.bind(this),
+            closeByOutsideClick: this.closeBy.bind(this, Modal.closeReason.BY_OUTSIDE_CLICK),
+            preventPageScrollByScrollbar: preventPageScrollByScrollbar(window.scrollX, window.scrollY)
+        };
 
-        let modal = <div ref={this.getElement("box")} className="rc-modal__box">
+        window.addEventListener("keyup", this.events.closeByEscape, false);
+        window.addEventListener("keydown", preventScrollByKeyboard, false);
+        window.addEventListener("scroll", preventPageScrollByScrollbar, false);
+        this.dom.element.addEventListener("mousewheel", preventDefault, false);
+        this.dom.element.addEventListener("click", this.events.closeByOutsideClick, false);
+    }
+
+    unitialize() {
+        window.removeEventListener("keyup", this.events.closeByEscape, false);
+        window.removeEventListener("keydown", preventScrollByKeyboard, false);
+        window.removeEventListener("scroll", preventPageScrollByScrollbar, false);
+        this.dom.element.removeEventListener("mousewheel", preventDefault, false);
+        this.dom.element.removeEventListener("click", this.events.closeByOutsideClick, false);
+
+        this.events = {};
+    }
+
+    closeByEscape({ keyCode }) {
+        if (keyCode == KeyCode.Escape) {
+            this.closeBy(Modal.closeReason.BY_ESCAPE_BUTTON);
+        }
+    }
+
+    closeBy(reason) {
+        this.invoke("onClose", reason);
+    }
+
+    render() {
+        if (!this.isClient) return null;
+
+        let modal = <div ref={this.getElement("element")} className="rc-modal__box">
             <div className="rc-modal__content">
                 {this.props.children}
             </div>
@@ -69,14 +72,12 @@ export default class Modal extends React.Component {
 }
 
 function getModalRootElement() {
-    if (typeof document == "undefined") return null;
-
-    let modalRootElement = document.querySelector(`.${Modal.MODAL_ROOT_CLASS_NAME}`);
+    let modalRootElement = document.querySelector(`.${Modal.classNames.root}`);
 
     if (!modalRootElement) {
         modalRootElement = document.createElement("div");
 
-        modalRootElement.className = Modal.MODAL_ROOT_CLASS_NAME;
+        modalRootElement.className = Modal.classNames.root;
 
         document.body.appendChild(modalRootElement);
     }
@@ -86,18 +87,23 @@ function getModalRootElement() {
 
 function preventDefault(event) {
     event.preventDefault();
-    // event.stopPropagation();
-    // event.nativeEvent.stopImmediatePropagation();
 }
+
+const exceptionCodes = [
+    KeyCode.ArrowLeft, KeyCode.ArrowRight, KeyCode.ArrowUp, KeyCode.ArrowDown,
+    KeyCode.PageUp, KeyCode.PageDown, KeyCode.End, KeyCode.Home
+];
 
 function preventScrollByKeyboard(event) {
     let { keyCode } = event;
 
-    if ([38, 40, 37, 39, 36, 35, 33, 34].some(exceptionCode => keyCode == exceptionCode)) {
+    if (exceptionCodes.some(exceptionCode => keyCode == exceptionCode)) {
         preventDefault(event);
     }
 }
 
-function preventPageScrollByScrollbar() {
-    window.scrollTo(...preventPageScrollByScrollbar.initialScroll);
+function preventPageScrollByScrollbar(x, y) {
+    return function () {
+        window.scrollTo(x, y);
+    };
 }

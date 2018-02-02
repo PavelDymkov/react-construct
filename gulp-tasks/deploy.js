@@ -91,7 +91,9 @@ function buildJs(sourceFilePath, destinationFilePath) {
                         "auto-import", {
                         "declarations": [
                             {"default": "React", "path": "react"},
-                            {"default": "PropTypes", "path": "prop-types"}
+                            {"default": "PropTypes", "path": "prop-types"},
+                            {"default": "BaseComponent", "path": getRootPathFor("base-component", destinationFilePath)},
+                            {"default": "KeyCode", "path": getRootPathFor("key-codes", destinationFilePath)}
                         ]
                     }
                     ],
@@ -109,7 +111,18 @@ function buildJs(sourceFilePath, destinationFilePath) {
         } catch (error) {
             let address = error.loc ? ` (${error.loc.line}:${error.loc.column})` : "";
 
-            reject(`compile error:\n    at ${sourceFilePath}:${address}`);
+            reject(`compile error:\n    at ${sourceFilePath}${address}`);
         }
     });
+}
+
+function getRootPathFor(fileName, destinationFilePath) {
+    let parts = destinationFilePath.split(separator);
+    let depth = (parts.length - 1) - (parts.lastIndexOf("lib") + 1);
+
+    if (depth == 0) return `./${fileName}`;
+
+    if (depth < 0) throw new Error;
+
+    return `${ [...Array(depth)].map(() => "..").join("/") }/${fileName}.js`;
 }
