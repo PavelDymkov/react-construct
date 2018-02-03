@@ -120,7 +120,7 @@ function getRootPathFor(fileName, destinationFilePath) {
     let parts = destinationFilePath.split(separator);
     let depth = (parts.length - 1) - (parts.lastIndexOf("lib") + 1);
 
-    if (depth == 0) return `./${fileName}`;
+    if (depth == 0) return `./${fileName}.js`;
 
     if (depth < 0) throw new Error;
 

@@ -98,10 +98,20 @@ gulp.task("test:server-side-render", done => {
 
 gulp.task("test:run", () => {
     return new Promise((resolve, reject) => {
-        spawn("node", ["node_modules/.bin/jest", "test/"])
-            .on("close", () => {
-                shotDownServer(resolve);
+        let testPropcess = spawn("node", ["node_modules/.bin/jest", "test/"]);
+
+        testPropcess.stdout.on("data", data => process.stdout.write(data));
+        testPropcess.stderr.on("data", data => process.stderr.write(data));
+
+        testPropcess.on("close", code => {
+            shotDownServer(() => {
+                if (code == 0) {
+                    resolve();
+                } else {
+                    reject(`tests failure`);
+                }
             });
+        });
     });
 });
 
@@ -235,9 +245,7 @@ function getRequire(filePath) {
 }
 
 function getEntryPoint(url) {
-    if (url.indexOf("/") > 0) {
-        return `./test${url}.js`;
-    }
+    if (url.indexOf("/") > 0) return `./test${url}.js`;
 
     let name = url.substring(1);
 
