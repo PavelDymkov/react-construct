@@ -71,8 +71,18 @@ gulp.task("deploy", gulp.series("deploy:clean-before", gulp.parallel("deploy:js"
 module.exports = { getLibFilePaths, buildJs };
 
 function getLibFilePaths(path) {
-    let batches = path.split(separator);
-    let relativeFilePath = batches.slice(batches.lastIndexOf("source") + 2).join(separator);
+    let parts = path.split(separator);
+
+    parts = parts.slice(parts.lastIndexOf("source") + 1);
+
+    let [directory, fileName] = parts;
+    let tester = new RegExp(`^${directory || ""}.(js|css)$`);
+
+    if (tester.test(fileName)) {
+        parts = parts.slice(1);
+    }
+
+    let relativeFilePath = parts.join(separator);
 
     let sourceFilePath = join(process.cwd(), path);
     let destinationFilePath = join(process.cwd(), "lib/", relativeFilePath);

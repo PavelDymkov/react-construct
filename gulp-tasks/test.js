@@ -63,7 +63,7 @@ const webpackConfig = {
     plugins: [ new ExtractTextPlugin(bundle.css) ]
 };
 
-let shotDownServer = null;
+let shotDownServer = callback => callback && callback();;
 
 gulp.task("test:client-side-render", done => {
     runServer(({ js, css }) => `
@@ -98,12 +98,13 @@ gulp.task("test:server-side-render", done => {
 
 gulp.task("test:run", () => {
     return new Promise((resolve, reject) => {
-        let testPropcess = spawn("node", ["node_modules/.bin/jest", "test/"]);
+        let flags = ["--colors", "--config=test/jest.config.js"];
+        let testProcess = spawn("node", ["node_modules/.bin/jest", "test/", ...flags]);
 
-        testPropcess.stdout.on("data", data => process.stdout.write(data));
-        testPropcess.stderr.on("data", data => process.stderr.write(data));
+        testProcess.stdout.on("data", data => process.stdout.write(data));
+        testProcess.stderr.on("data", data => process.stderr.write(data));
 
-        testPropcess.on("close", code => {
+        testProcess.on("close", code => {
             shotDownServer(() => {
                 if (code == 0) {
                     resolve();

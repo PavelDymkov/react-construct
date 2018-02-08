@@ -7,18 +7,18 @@ const { copy } = require("fs-extra");
 gulp.task("dev:watching", () => {
     let libFilesWatcher = gulp.watch("./source/*/*.js");
 
-    libFilesWatcher.on("add", libFileRebuild);
-    libFilesWatcher.on("change", libFileRebuild);
+    libFilesWatcher.on("add", delay(libFileRebuild));
+    libFilesWatcher.on("change", delay(libFileRebuild));
 
     let rootFilesWatcher = gulp.watch("./source/*.js");
 
-    rootFilesWatcher.on("add", rootFileRebuild);
-    rootFilesWatcher.on("change", rootFileRebuild);
+    rootFilesWatcher.on("add", delay(rootFileRebuild));
+    rootFilesWatcher.on("change", delay(rootFileRebuild));
 
     let cssFilesWatcher = gulp.watch("./source/*/*.css");
 
-    cssFilesWatcher.on("add", copyCssFile);
-    cssFilesWatcher.on("change", copyCssFile);
+    cssFilesWatcher.on("add", delay(copyCssFile));
+    cssFilesWatcher.on("change", delay(copyCssFile));
 
     return Promise.resolve();
 });
@@ -42,4 +42,14 @@ function copyCssFile(filePath) {
     let [sourceFilePath, destinationFilePath] = getLibFilePaths(filePath);
 
     return copy(sourceFilePath, destinationFilePath);
+}
+
+function delay(fn) {
+    return function (filePath) {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                fn(filePath).then(resolve);
+            }, 200);
+        });
+    }
 }
