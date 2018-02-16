@@ -1,3 +1,4 @@
+import Modal from "./modal.js";
 import "./dropdown.css";
 
 
@@ -11,28 +12,40 @@ export default class Dropdown extends BaseComponent {
         onClose: PropTypes.func
     };
 
-    constructor(props) {
-        super(props);
+    static classNames = {
+        box: "rc-dropdown__box",
+        content: "rc-dropdown__content"
+    };
 
-        this.inverted = false;
-    }
-
-    componentDidUpdate() {
-        this.position();
+    define() {
+        this.inverted = null;
+        this.boxRect = null;
+        this.contentRect = null;
     }
 
     initialize() {
         this.position();
     }
 
+    update() {
+        this.position();
+    }
+
     position() {
         if (!this.dom.content) return;
 
+        this.boxRect = this.dom.box.getBoundingClientRect();
+
+        this.dom.content.style.width = `${this.boxRect.width}px`;
+        this.dom.content.style.left = `${this.boxRect.left}px`;
+
         if (this.props.invert) this.positionInvert();
         else this.positionNormal();
+    }
 
+    positionNormal() {
         if (this.props.fitOnScreen === false) {
-            if (this.props.invert) this.invert();
+            this.cancelInvert();
 
             return;
         }
@@ -41,43 +54,7 @@ export default class Dropdown extends BaseComponent {
         let screenTop = window.pageYOffset;
         let screenBottom = screenTop + document.documentElement.clientHeight;
 
-        if (this.props.invert) {
-            if (contentRect.top > screenTop) {
-                let boxRect = this.dom.box.getBoundingClientRect();
-
-                if (contentRect.top - boxRect.height - contentRect.height >= screenTop) {
-                    this.invert();
-                } else {
-                    this.cancelInvert();
-                }
-            } else {
-                this.cancelInvert();
-            }
-        } else {
-            if (contentRect.bottom > screenBottom) {
-                let boxRect = this.dom.box.getBoundingClientRect();
-
-                if (contentRect.top - boxRect.height - contentRect.height >= screenTop) {
-                    this.invert();
-                } else {
-                    this.cancelInvert();
-                }
-            } else {
-                this.cancelInvert();
-            }
-        }
-    }
-
-    positionNormal() {
-        if (this.props.fitOnScreen === false) return;
-
-        let contentRect = this.dom.content.getBoundingClientRect();
-        let screenTop = window.pageYOffset;
-        let screenBottom = screenTop + document.documentElement.clientHeight;
-
         if (contentRect.bottom > screenBottom) {
-            let boxRect = this.dom.box.getBoundingClientRect();
-
             if (contentRect.top - boxRect.height - contentRect.height >= screenTop) {
                 this.invert();
             } else {
@@ -113,29 +90,31 @@ export default class Dropdown extends BaseComponent {
     }
 
     invert() {
-        if (this.inverted) return;
+        if (this.inverted === true) return;
         else this.inverted = true;
 
-        this.dom.content.style.top = "inherit";
-        this.dom.content.style.bottom = "100%";
+        contentStyles.top = "";
+        contentStyles.bottom = `${this.boxRect.top}px`;
     }
 
     cancelInvert() {
-        if (!this.inverted) return;
+        if (!this.inverted === false) return;
         else this.inverted = false;
 
-        this.dom.content.style.top = "100%";
+        this.dom.content.style.top = `${this.boxRect.bottom}px`;
         this.dom.content.style.bottom = "";
     }
 
     render() {
-        return <div ref={this.getElement("box")} className="rc-dropdown__box">
+        return <div ref={this.getElement("box")} className={Dropdown.classNames.box}>
             {this.props.box}
 
             <If true={this.props.show}>
-                <div ref={this.getElement("content")} className="rc-dropdown__content">
-                    {this.props.content}
-                </div>
+                <Modal>
+                    <div ref={this.getElement("content")} className={Dropdown.classNames.content}>
+                        {this.props.content}
+                    </div>
+                </Modal>
             </If>
         </div>
     }

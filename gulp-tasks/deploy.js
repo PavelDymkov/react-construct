@@ -18,7 +18,7 @@ gulp.task("deploy:build-lib-js", () => {
             jsFiles.forEach(async filePath => {
                 let [sourceFilePath, destinationFilePath] = getLibFilePaths(filePath);
 
-                await buildJs(sourceFilePath, destinationFilePath);
+                await buildJs(sourceFilePath, destinationFilePath).catch(console.log);
             });
 
             resolve();
@@ -34,7 +34,7 @@ gulp.task("deploy:build-root-js", () => {
             jsFiles.forEach(async filePath => {
                 let fileName = basename(filePath);
 
-                await buildJs(filePath, `./lib/${fileName}`);
+                await buildJs(filePath, `./lib/${fileName}`).catch(console.log);
             });
 
             resolve();
@@ -105,9 +105,10 @@ function buildJs(sourceFilePath, destinationFilePath) {
                             {"default": "BaseComponent", "path": getRootPathFor("base-component", destinationFilePath)},
                             {"default": "KeyCode", "path": getRootPathFor("key-codes", destinationFilePath)}
                         ]
-                    }
+                        }
                     ],
                     "transform-class-properties",
+                    ["transform-object-rest-spread", { "useBuiltIns": true }],
                     "syntax-jsx",
                     "transform-react-statements",
                     "transform-react-jsx",

@@ -1,6 +1,8 @@
 import "./button.css";
 
 
+let tabIndex = 0;
+
 export default class Button extends BaseComponent {
     static propTypes = {
         focusable: PropTypes.bool,
@@ -8,7 +10,8 @@ export default class Button extends BaseComponent {
         onFocusIn: PropTypes.func,
         onFocusOut: PropTypes.func,
         onFocusChange: PropTypes.func,
-        onKey: PropTypes.func
+        onKey: PropTypes.func,
+        onKeyPress: PropTypes.func
     };
 
     static classNames = {
@@ -24,25 +27,18 @@ export default class Button extends BaseComponent {
             onClick: this.onClick.bind(this),
             onFocus: this.onFocusIn.bind(this),
             onBlur: this.onFocusOut.bind(this),
-            onKeyUp: this.onKeyUp.bind(this)
+            onKeyUp: this.onKey.bind(this, "onKey"),
+            onKeyPress: this.onKey.bind(this, "onKeyPress")
         };
 
-        this.helperProps = null;
-
         if (props.focusable !== false) {
-            this.helperProps = {
-                className: Button.classNames.focusableHelper,
-                onKeyUp: this.onKeyUp.bind(this)
-            };
+            this.elementProps.tabIndex = String(++tabIndex);
         }
     }
 
     componentWillReceiveProps(nextProps) {
         if (nextProps.focusable !== false && !this.helperProps) {
-            this.helperProps = {
-                className: Button.classNames.focusableHelper,
-                onKeyUp: this.onKeyUp.bind(this)
-            };
+            this.elementProps.tabIndex = String(++tabIndex);
         }
     }
 
@@ -52,8 +48,8 @@ export default class Button extends BaseComponent {
         this.invoke("onRelease");
     }
 
-    onKeyUp({ keyCode: key, shiftKey, ctrlKey, altKey }) {
-        this.invoke("onKey", { key, shiftKey, ctrlKey, altKey });
+    onKey(type, { keyCode: key, shiftKey, ctrlKey, altKey }) {
+        this.invoke(type, { key, shiftKey, ctrlKey, altKey });
 
         if (key == KeyCode.Enter) this.invoke("onRelease");
     }
@@ -71,10 +67,6 @@ export default class Button extends BaseComponent {
     render() {
         return <div {...this.elementProps}>
             {this.props.children}
-
-            <If true={this.props.focusable !== false}>
-                <input ref={this.getElement("helper")} {...this.helperProps} />
-            </If>
         </div>
     }
 }

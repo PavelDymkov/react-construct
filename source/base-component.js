@@ -2,15 +2,17 @@ export default class BaseComponent extends React.Component {
     constructor(props) {
         super(props);
 
-        this.isClient = typeof window != "undefined" && Boolean(window.document);
+        this.isClient = typeof window != "undefined" && window && Boolean(window.document);
 
-        this.data = {};
+        let value = this.propsToValue(props);
+
+        this.value = typeof value != "undefined" ? value : null;
+
         this.dom = {};
         this.components = {};
-        this.events = {};
 
         this.define();
-        this.handleProps(props);
+        this.bind();
     }
 
     componentDidMount() {
@@ -19,8 +21,21 @@ export default class BaseComponent extends React.Component {
         }
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.handleProps(nextProps);
+    shouldComponentUpdate(nextProps, nextState) {
+        let value = this.propsToValue(nextProps);
+        let undefined;
+        let shouldUpdate = value !== undefined;
+
+        if (shouldUpdate) this.value = value;
+        else for (let key in nextProps) {
+            if (key == "value") continue;
+            if (nextProps[key] !== this.props[key]) {
+                shouldUpdate = true;
+                break;
+            }
+        }
+
+        return shouldUpdate;
     }
 
     componentDidUpdate() {
@@ -35,9 +50,11 @@ export default class BaseComponent extends React.Component {
 
     define() { }
 
+    bind() { }
+
     initialize() { }
 
-    handleProps(props) { } // applyProps
+    propsToValue(props) { }
 
     update() { }
 
@@ -63,10 +80,6 @@ export default class BaseComponent extends React.Component {
         if (!this.isClient) return emptyFunction;
 
         return component => this.components[name] = component;
-    }
-
-    rerender() {
-        this.setState({ __update__: Math.random() });
     }
 
     invoke(name, data) {

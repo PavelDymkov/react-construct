@@ -10,13 +10,19 @@ export default class Modal extends BaseComponent {
     };
 
     static classNames = {
-        root: "rc-modal__root"
+        root: "rc-modal__root",
+        box: "rc-modal__box",
+        content: "rc-modal__content"
     };
 
     static closeReason = {
         BY_ESCAPE_BUTTON: 1,
         BY_OUTSIDE_CLICK: 2
     };
+
+    define() {
+        this.events = null;
+    }
 
     componentWillMount() {
         if (this.isClient) {
@@ -61,11 +67,10 @@ export default class Modal extends BaseComponent {
     render() {
         if (!this.isClient) return null;
 
-        let modal = <div ref={this.getElement("element")} className="rc-modal__box">
-            <div className="rc-modal__content">
+        let modal =
+            <div ref={this.getElement("element")} className={Modal.classNames.box}>
                 {this.props.children}
             </div>
-        </div>
 
         return ReactDOM.createPortal(modal, this.dom.root);
     }

@@ -1,0 +1,11 @@
+.rc-pointer-controlled-slider__box {
+    position: relative;
+    display: inline-block;
+}
+
+.rc-pointer-controlled-slider__thumb {
+    position: absolute;
+    display: inline-block;
+    left: 0;
+    top: 0;
+}

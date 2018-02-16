@@ -29,6 +29,7 @@
     "babel-plugin-auto-import": "^0.7.1",
     "babel-plugin-syntax-jsx": "^6.18.0",
     "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-plugin-transform-react-display-name": "^6.25.0",
     "babel-plugin-transform-react-jsx": "^6.24.1",
     "babel-plugin-transform-react-statements": "^0.7.3",
